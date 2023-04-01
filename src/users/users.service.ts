@@ -14,12 +14,13 @@ export class UsersService {
     try {
       const exists = await this.usersRepository.findOne({ where: { email } });
       if (exists) {
-        return 'There is a user with that email already';
+        return { ok: false, error: 'There is a user with that email already' };
       }
       const newUser = this.usersRepository.create(createAccountInput);
       this.usersRepository.save(newUser);
+      return { ok: true };
     } catch (error) {
-      return "Couldn't create account";
+      return { ok: false, error: "Couldn't create account" };
     }
   }
 }
