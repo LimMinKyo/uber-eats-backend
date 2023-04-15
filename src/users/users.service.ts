@@ -59,4 +59,8 @@ export class UsersService {
       };
     }
   }
+
+  findById(id: number) {
+    return this.usersRepository.findOne({ where: { id } });
+  }
 }
