@@ -4,6 +4,7 @@ import { CreateAccountInput } from './dtos/create-account.dto';
 import { LoginInput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
 import { JwtService } from '@src/jwt/jwt.service';
+import { UpdateProfileInput } from './dtos/update-profile.dto';
 
 export class UsersService {
   constructor(
@@ -60,7 +61,21 @@ export class UsersService {
     }
   }
 
-  findById(id: number) {
-    return this.usersRepository.findOne({ where: { id } });
+  findById(userId: number) {
+    return this.usersRepository.findOne({ where: { id: userId } });
+  }
+
+  async updateProfile(
+    userId: number,
+    { email, password }: UpdateProfileInput,
+  ): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (email) {
+      user.email = email;
+    }
+    if (password) {
+      user.password = password;
+    }
+    return this.usersRepository.save(user);
   }
 }
