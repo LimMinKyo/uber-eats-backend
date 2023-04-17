@@ -24,26 +24,12 @@ export class UsersResolver {
   async createAccount(
     @Args('input') createAccountInput: CreateAccountInput,
   ): Promise<CreateAccountOutput> {
-    try {
-      return await this.usersService.createAccount(createAccountInput);
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return await this.usersService.createAccount(createAccountInput);
   }
 
   @Mutation(() => LoginOutput)
   async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
-    try {
-      return await this.usersService.login(loginInput);
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return await this.usersService.login(loginInput);
   }
 
   @Query(() => User)
@@ -57,21 +43,7 @@ export class UsersResolver {
   async userProfile(
     @Args() userProfileInput: UserProfileInput,
   ): Promise<UserProfileOutput> {
-    try {
-      const user = await this.usersService.findById(userProfileInput.userId);
-      if (!user) {
-        throw new Error();
-      }
-      return {
-        ok: true,
-        user,
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error: 'User Not Found',
-      };
-    }
+    return this.usersService.findById(userProfileInput.userId);
   }
 
   @UseGuards(AuthGuard)
@@ -80,17 +52,7 @@ export class UsersResolver {
     @AuthUser() AuthUser: User,
     @Args('input') updateProfileInput: UpdateProfileInput,
   ): Promise<UpdateProfileOutput> {
-    try {
-      await this.usersService.updateProfile(AuthUser.id, updateProfileInput);
-      return {
-        ok: true,
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.usersService.updateProfile(AuthUser.id, updateProfileInput);
   }
 
   @Mutation(() => VerifyEmailOutput)
