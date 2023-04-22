@@ -14,7 +14,7 @@ const getMockRepository = () => ({
 });
 
 const mockJwtService = {
-  sign: jest.fn(),
+  sign: jest.fn(() => 'signed-token'),
   verify: jest.fn(),
 };
 
@@ -27,10 +27,11 @@ type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
 describe('UsersService', () => {
   let usersService: UsersService;
   let mailService: MailService;
+  let jwtService: JwtService;
   let usersRepository: MockRepository<User>;
   let verificationsRepository: MockRepository<Verification>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
         UsersService,
@@ -51,11 +52,12 @@ describe('UsersService', () => {
     }).compile();
     usersService = module.get<UsersService>(UsersService);
     mailService = module.get<MailService>(MailService);
+    jwtService = module.get<JwtService>(JwtService);
     usersRepository = module.get(getRepositoryToken(User));
     verificationsRepository = module.get(getRepositoryToken(Verification));
   });
 
-  it('should be defined', () => {
+  it('should be defined.', () => {
     expect(usersService).toBeDefined();
   });
 
@@ -65,7 +67,7 @@ describe('UsersService', () => {
       password: '12345',
       role: 0,
     };
-    it('shoud be fail if user exits', async () => {
+    it('shoud be fail if user exits.', async () => {
       usersRepository.findOne.mockResolvedValue({
         id: 1,
         email: 'test@test.com',
@@ -77,7 +79,7 @@ describe('UsersService', () => {
       });
     });
 
-    it('should create a new user', async () => {
+    it('should create a new user.', async () => {
       usersRepository.findOne.mockResolvedValue(undefined);
       usersRepository.create.mockReturnValue(createAccountArgs);
       usersRepository.save.mockResolvedValue(createAccountArgs);
@@ -114,9 +116,78 @@ describe('UsersService', () => {
 
       expect(result).toEqual({ ok: true });
     });
+
+    it('should fail on exception.', async () => {
+      usersRepository.findOne.mockRejectedValue(new Error());
+
+      const result = await usersService.createAccount(createAccountArgs);
+
+      expect(result).toEqual({ ok: false, error: "Couldn't create account" });
+    });
   });
 
-  it.todo('login');
+  describe('login', () => {
+    const loginArgs = {
+      email: 'test@test.com',
+      password: '12345',
+    };
+    it('should fail if user does not exist.', async () => {
+      usersRepository.findOne.mockResolvedValue(null);
+
+      const result = await usersService.login(loginArgs);
+
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { email: loginArgs.email },
+        select: ['password', 'id'],
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'User not found.',
+      });
+    });
+
+    it('should fail if password is wrong.', async () => {
+      const mockedUser = {
+        checkPassword: jest.fn(() => Promise.resolve(false)),
+      };
+      usersRepository.findOne.mockResolvedValue(mockedUser);
+
+      const result = await usersService.login(loginArgs);
+
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(mockedUser.checkPassword).toHaveBeenCalledTimes(1);
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Wrong password.',
+      });
+    });
+
+    it('should return token if password correct.', async () => {
+      const mockedUser = {
+        id: 1,
+        checkPassword: jest.fn(() => Promise.resolve(true)),
+      };
+      usersRepository.findOne.mockResolvedValue(mockedUser);
+
+      const result = await usersService.login(loginArgs);
+
+      expect(jwtService.sign).toHaveBeenCalledTimes(1);
+      expect(jwtService.sign).toHaveBeenCalledWith(mockedUser.id);
+
+      expect(result).toEqual({ ok: true, token: 'signed-token' });
+    });
+
+    it('should fail on exception.', async () => {
+      usersRepository.findOne.mockRejectedValue(new Error());
+
+      const result = await usersService.login(loginArgs);
+
+      expect(result).toEqual({ ok: false, error: "Can't log user in." });
+    });
+  });
   it.todo('findById');
   it.todo('editProfile');
   it.todo('verifyEmail');
