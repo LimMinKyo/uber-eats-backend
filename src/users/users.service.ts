@@ -11,7 +11,7 @@ import {
   UpdateProfileInput,
   UpdateProfileOutput,
 } from './dtos/update-profile.dto';
-import { Verification } from './entities/verification.entitiy';
+import { Verification } from './entities/verification.entity';
 import { VerifyEmailOutput } from './dtos/verify-email.dto';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { MailService } from '@src/mail/mail.service';
