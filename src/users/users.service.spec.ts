@@ -12,6 +12,7 @@ const getMockRepository = () => ({
   save: jest.fn(),
   create: jest.fn(),
   findOneOrFail: jest.fn(),
+  delete: jest.fn(),
 });
 
 const getMockJwtService = () => ({
@@ -305,5 +306,67 @@ describe('UsersService', () => {
     });
   });
 
-  it.todo('verifyEmail');
+  describe('verifyEmail', () => {
+    const code = '123456';
+
+    it('should verify email.', async () => {
+      const mockVerification = {
+        user: {
+          verified: false,
+        },
+        id: 1,
+      };
+
+      verificationsRepository.findOne.mockResolvedValue(mockVerification);
+
+      const result = await usersService.verifyEmail(code);
+
+      expect(verificationsRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.findOne).toHaveBeenCalledWith({
+        where: { code },
+        relations: ['user'],
+      });
+
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith({ verified: true });
+
+      expect(verificationsRepository.delete).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.delete).toHaveBeenCalledWith(
+        mockVerification.id,
+      );
+
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on verification not found.', async () => {
+      verificationsRepository.findOne.mockResolvedValue(undefined);
+
+      const result = await usersService.verifyEmail(code);
+
+      expect(verificationsRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.findOne).toHaveBeenCalledWith({
+        where: { code },
+        relations: ['user'],
+      });
+
+      expect(result).toEqual({ ok: false, error: 'Verification not found.' });
+    });
+
+    it('should fail on exception.', async () => {
+      verificationsRepository.findOne.mockRejectedValue(new Error());
+
+      const result = await usersService.verifyEmail(code);
+
+      expect(verificationsRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.findOne).toHaveBeenCalledWith({
+        where: { code },
+        relations: ['user'],
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not verify email.',
+      });
+    });
+  });
 });
