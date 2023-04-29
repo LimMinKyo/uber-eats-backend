@@ -22,7 +22,7 @@ export class MailService {
     });
   }
 
-  private async sendEmail({
+  async sendEmail({
     subject,
     template,
     to,
@@ -32,22 +32,29 @@ export class MailService {
     template: string;
     to: string;
     emailVars: EmailVar[];
-  }) {
-    const formData = new FormData();
-    formData.append('subject', subject);
-    formData.append('from', `Uber Eats <mailgun@${this.options.domain}>`);
-    formData.append('to', to);
-    formData.append('template', template);
-    emailVars.forEach(({ key, value }) => formData.append(`v:${key}`, value));
+  }): Promise<boolean> {
+    try {
+      const formData = new FormData();
+      formData.append('subject', subject);
+      formData.append('from', `Uber Eats <mailgun@${this.options.domain}>`);
+      formData.append('to', to);
+      formData.append('template', template);
+      emailVars.forEach(({ key, value }) => formData.append(`v:${key}`, value));
 
-    await got(`https://api.mailgun.net/v3/${this.options.domain}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${Buffer.from(
-          `api:${this.options.apiKey}`,
-        ).toString('base64')}`,
-      },
-      body: formData,
-    });
+      await got.post(
+        `https://api.mailgun.net/v3/${this.options.domain}/messages`,
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `api:${this.options.apiKey}`,
+            ).toString('base64')}`,
+          },
+          body: formData,
+        },
+      );
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
