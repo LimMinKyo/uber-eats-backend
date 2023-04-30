@@ -92,7 +92,13 @@
     "testEnvironment": "node",
     "coveragePathIgnorePatterns": [
       "node_modules",
+      "main.ts",
       ".entity.ts",
+      ".decorator.ts",
+      ".guard.ts",
+      ".middleware.ts",
+      ".module.ts",
+      ".resolver.ts",
       ".dto.ts",
       ".constants.ts"
     ]
