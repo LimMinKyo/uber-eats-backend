@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as request from 'supertest';
+import { User } from '@src/users/entities/user.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 jest.mock('got', () => {
   return {
@@ -19,14 +21,16 @@ const testUser = {
 
 describe('UsersModule (e2e)', () => {
   let app: INestApplication;
+  let usersRepository: Repository<User>;
   let jwtToken: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = module.createNestApplication();
+    usersRepository = module.get(getRepositoryToken(User));
     await app.init();
   });
 
@@ -164,7 +168,77 @@ describe('UsersModule (e2e)', () => {
         });
     });
   });
+
+  describe('userProfile', () => {
+    let userId: number;
+    beforeAll(async () => {
+      const [user] = await usersRepository.find();
+      userId = user.id;
+    });
+
+    it(`should find a user's profile`, () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+            {
+              userProfile(userId: ${userId}) {
+                ok,
+                error,
+                user {
+                  id
+                }
+              }
+            }
+          `,
+        })
+        .set('X-JWT', jwtToken)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                userProfile: { ok, error, user },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(user.id).toBe(userId);
+        });
+    });
+    it(`should not find a user's profile`, () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+            {
+              userProfile(userId: 666) {
+                ok,
+                error,
+                user {
+                  id
+                }
+              }
+            }
+          `,
+        })
+        .set('X-JWT', jwtToken)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                userProfile: { ok, error, user },
+              },
+            },
+          } = res;
+          expect(ok).toBe(false);
+          expect(error).toBe('User Not Found.');
+          expect(user).toBe(null);
+        });
+    });
+  });
   it.todo('me');
-  it.todo('userProfile');
   it.todo('verifyEmail');
 });
