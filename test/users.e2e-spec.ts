@@ -291,6 +291,125 @@ describe('UsersModule (e2e)', () => {
     });
   });
 
-  it.todo('updateProfile');
+  describe('updateProfile', () => {
+    const NEW_EMAIL = 'test@new.com';
+    const NEW_PASSWORD = 'new123';
+
+    it('should change email.', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+            mutation {
+              updateProfile(input: {
+                email: "${NEW_EMAIL}"
+              }) {
+                ok,
+                error
+              }
+            }
+          `,
+        })
+        .set('X-JWT', jwtToken)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                updateProfile: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+    it('should have new email.', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+            {
+              me {
+                email
+              }
+            }
+          `,
+        })
+        .set('X-JWT', jwtToken)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                me: { email },
+              },
+            },
+          } = res;
+          expect(email).toBe(NEW_EMAIL);
+        });
+    });
+
+    it('should not change email if email is already exists.', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+            mutation {
+              updateProfile(input: {
+                email: "${NEW_EMAIL}"
+              }) {
+                ok,
+                error
+              }
+            }
+          `,
+        })
+        .set('X-JWT', jwtToken)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                updateProfile: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(false);
+          expect(error).toBe('email is already exists.');
+        });
+    });
+
+    it('should change password.', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+            mutation {
+              updateProfile(input: {
+                password: "${NEW_PASSWORD}"
+              }) {
+                ok,
+                error
+              }
+            }
+          `,
+        })
+        .set('X-JWT', jwtToken)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                updateProfile: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+  });
+
   it.todo('verifyEmail');
 });

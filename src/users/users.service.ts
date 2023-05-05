@@ -110,8 +110,15 @@ export class UsersService {
         where: { id: userId },
       });
       if (email) {
+        const countedUser = await this.usersRepository.count({
+          where: { email },
+        });
+        if (countedUser !== 0) {
+          return { ok: false, error: 'email is already exists.' };
+        }
         user.email = email;
         user.verified = false;
+        await this.verificationsRepository.delete({ user: { id: user.id } });
         const verification = await this.verificationsRepository.save(
           this.verificationsRepository.create({ user }),
         );
