@@ -13,6 +13,7 @@ const getMockRepository = () => ({
   create: jest.fn(),
   findOneOrFail: jest.fn(),
   delete: jest.fn(),
+  count: jest.fn(),
 });
 
 const getMockJwtService = () => ({
@@ -234,6 +235,7 @@ describe('UsersService', () => {
       };
 
       usersRepository.findOne.mockResolvedValue(oldUser);
+      usersRepository.count.mockResolvedValue(0);
       verificationsRepository.create.mockReturnValue(newVerification);
       verificationsRepository.save.mockResolvedValue(newVerification);
 
@@ -245,6 +247,11 @@ describe('UsersService', () => {
       expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { id: updateProfileArgs.userId },
+      });
+
+      expect(usersRepository.count).toHaveBeenCalledTimes(1);
+      expect(usersRepository.count).toHaveBeenCalledWith({
+        where: { email: updateProfileArgs.input.email },
       });
 
       expect(verificationsRepository.create).toHaveBeenCalledTimes(1);
@@ -290,6 +297,39 @@ describe('UsersService', () => {
       );
 
       expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail if email is exists.', async () => {
+      const oldUser = {
+        email: 'bs@old.com',
+        verified: true,
+      };
+      const updateProfileArgs = {
+        userId: 1,
+        input: {
+          email: 'bs@old.com',
+        },
+      };
+
+      usersRepository.findOne.mockResolvedValue(oldUser);
+      usersRepository.count.mockResolvedValue(1);
+
+      const result = await usersService.updateProfile(
+        updateProfileArgs.userId,
+        updateProfileArgs.input,
+      );
+
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: updateProfileArgs.userId },
+      });
+
+      expect(usersRepository.count).toHaveBeenCalledTimes(1);
+      expect(usersRepository.count).toHaveBeenCalledWith({
+        where: { email: updateProfileArgs.input.email },
+      });
+
+      expect(result).toEqual({ ok: false, error: 'email is already exists.' });
     });
 
     it('should fail on exception.', async () => {
