@@ -17,7 +17,7 @@ const getMockRepository = () => ({
 });
 
 const getMockJwtService = () => ({
-  sign: jest.fn(() => 'signed-token'),
+  sign: jest.fn(),
   verify: jest.fn(),
 });
 
@@ -26,11 +26,12 @@ const getMockMailService = () => ({
 });
 
 type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
+type MockService<T = any> = Partial<Record<keyof T, jest.Mock>>;
 
 describe('UsersService', () => {
   let usersService: UsersService;
   let mailService: MailService;
-  let jwtService: JwtService;
+  let jwtService: MockService<JwtService>;
   let usersRepository: MockRepository<User>;
   let verificationsRepository: MockRepository<Verification>;
 
@@ -55,7 +56,7 @@ describe('UsersService', () => {
     }).compile();
     usersService = module.get<UsersService>(UsersService);
     mailService = module.get<MailService>(MailService);
-    jwtService = module.get<JwtService>(JwtService);
+    jwtService = module.get(JwtService);
     usersRepository = module.get(getRepositoryToken(User));
     verificationsRepository = module.get(getRepositoryToken(Verification));
   });
@@ -174,6 +175,7 @@ describe('UsersService', () => {
         checkPassword: jest.fn(() => Promise.resolve(true)),
       };
       usersRepository.findOne.mockResolvedValue(mockedUser);
+      jwtService.sign.mockReturnValue('signed-token');
 
       const result = await usersService.login(loginArgs);
 
