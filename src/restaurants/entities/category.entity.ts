@@ -1,7 +1,7 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { CoreEntity } from '@src/common/entities/core.entity';
 import { IsString, Length } from 'class-validator';
-import { Column, Entity, JoinColumn, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { Restaurant } from './restaurant.entity';
 
 @Entity()
@@ -20,7 +20,6 @@ export class Category extends CoreEntity {
   coverImg: string;
 
   @OneToMany(() => Restaurant, (restaurant) => restaurant.category)
-  @JoinColumn()
   @Field(() => [Restaurant])
   restaurants: Restaurant[];
 }
