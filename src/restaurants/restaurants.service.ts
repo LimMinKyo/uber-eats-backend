@@ -7,6 +7,11 @@ import {
 } from './dtos/create-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
 import { User } from '@src/users/entities/user.entity';
+import {
+  UpdateRestaurantInput,
+  UpdateRestaurantOutput,
+} from './dtos/update-restaurant.dto';
+import { CategoryRepository } from './repositories/category.repository';
 import { Category } from './entities/category.entity';
 
 @Injectable()
@@ -14,8 +19,7 @@ export class RestaurantService {
   constructor(
     @InjectRepository(Restaurant)
     private readonly restaurantRepository: Repository<Restaurant>,
-    @InjectRepository(Category)
-    private readonly categoriesRepository: Repository<Category>,
+    private readonly categoriesRepository: CategoryRepository,
   ) {}
 
   async createRestaurant(
@@ -27,21 +31,9 @@ export class RestaurantService {
         createRestaurantInput,
       );
       newRestaurant.owner = owner;
-      const categoryName = createRestaurantInput.categoryName
-        .trim()
-        .toLowerCase();
-      const categorySlug = categoryName.replace(/ /g, '-');
-      let category = await this.categoriesRepository.findOne({
-        where: { slug: categorySlug },
-      });
-      if (!category) {
-        category = await this.categoriesRepository.save(
-          this.categoriesRepository.create({
-            slug: categorySlug,
-            name: categoryName,
-          }),
-        );
-      }
+      const category = await this.categoriesRepository.getOrCreate(
+        createRestaurantInput.categoryName,
+      );
       newRestaurant.category = category;
       await this.restaurantRepository.save(newRestaurant);
       return {
@@ -51,6 +43,56 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not create restaurant.',
+      };
+    }
+  }
+
+  async updateRestaurant(
+    owner: User,
+    updateRestaurantInput: UpdateRestaurantInput,
+  ): Promise<UpdateRestaurantOutput> {
+    try {
+      const restaurant = await this.restaurantRepository.findOne({
+        where: { id: updateRestaurantInput.restaurantId },
+      });
+
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: 'Restaurant not found.',
+        };
+      }
+
+      if (owner.id !== restaurant.ownerId) {
+        return {
+          ok: false,
+          error: "You can't update a restaurant that you don't own.",
+        };
+      }
+
+      let category: Category;
+
+      if (updateRestaurantInput.categoryName) {
+        category = await this.categoriesRepository.getOrCreate(
+          updateRestaurantInput.categoryName,
+        );
+      }
+
+      await this.restaurantRepository.save([
+        {
+          id: updateRestaurantInput.restaurantId,
+          ...updateRestaurantInput,
+          ...(category && { category }),
+        },
+      ]);
+
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'Could not update Restaurant',
       };
     }
   }
