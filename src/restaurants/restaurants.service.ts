@@ -161,11 +161,13 @@ export class RestaurantService {
     });
   }
 
-  async findCategoryBySlug({ slug }: CategoryInput): Promise<CategoryOutput> {
+  async findCategoryBySlug({
+    slug,
+    page,
+  }: CategoryInput): Promise<CategoryOutput> {
     try {
       const category = await this.categoriesRepository.findOne({
         where: { slug },
-        relations: ['restaurants'],
       });
 
       if (!category) {
@@ -175,9 +177,20 @@ export class RestaurantService {
         };
       }
 
+      const restaurants = await this.restaurantRepository.find({
+        where: { category: { id: category.id } },
+        take: 25,
+        skip: (page - 1) * 25,
+      });
+
+      category.restaurants = restaurants;
+
+      const totalResult = await this.getRestaurantCount(category);
+
       return {
         ok: true,
         category,
+        totalPages: Math.ceil(totalResult / 25),
       };
     } catch (error) {
       return {
