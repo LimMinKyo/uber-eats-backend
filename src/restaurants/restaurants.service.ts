@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Raw, Repository } from 'typeorm';
 import {
   CreateRestaurantInput,
   CreateRestaurantOutput,
@@ -21,6 +21,10 @@ import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
 import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
+import {
+  SearchRestaurantInput,
+  SearchRestaurantOutput,
+} from './dtos/search-restaurant.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -192,6 +196,32 @@ export class RestaurantService {
     }
   }
 
+  async searchRestaurant({
+    query,
+    page,
+  }: SearchRestaurantInput): Promise<SearchRestaurantOutput> {
+    try {
+      const [restaurants, totalResults] =
+        await this.restaurantRepository.findAndCount({
+          where: { name: Raw((name) => `${name} ILIKE '%${query}%'`) },
+          take: 25,
+          skip: (page - 1) * 25,
+        });
+
+      return {
+        ok: true,
+        restaurants,
+        totalResults,
+        totalPages: Math.ceil(totalResults / 25),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'Could not search Restaurant.',
+      };
+    }
+  }
+
   async getAllCategories(): Promise<AllCategoriesOutput> {
     try {
       const categories = await this.categoriesRepository.find();
@@ -247,7 +277,7 @@ export class RestaurantService {
     } catch (error) {
       return {
         ok: false,
-        error: '',
+        error: 'Could not load Category.',
       };
     }
   }

@@ -27,6 +27,10 @@ import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
 import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
+import {
+  SearchRestaurantInput,
+  SearchRestaurantOutput,
+} from './dtos/search-restaurant.dto';
 
 @Resolver(() => Restaurant)
 export class RestaurantResolver {
@@ -78,6 +82,13 @@ export class RestaurantResolver {
   @Query(() => RestaurantOutput)
   restaurant(@Args('input') restaurantInput: RestaurantInput) {
     return this.restaurantService.findRestaurantById(restaurantInput);
+  }
+
+  @Query(() => SearchRestaurantOutput)
+  searchRestaurant(
+    @Args('input') searchRestaurantInput: SearchRestaurantInput,
+  ) {
+    return this.restaurantService.searchRestaurant(searchRestaurantInput);
   }
 }
 
