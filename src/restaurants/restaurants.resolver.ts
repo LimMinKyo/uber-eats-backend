@@ -33,6 +33,7 @@ import {
 } from './dtos/search-restaurant.dto';
 import { Dish } from './entities/dish.entity';
 import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
+import { UpdateDishInput, UpdateDishOutput } from './dtos/update-dish.dto';
 
 @Resolver(() => Restaurant)
 export class RestaurantResolver {
@@ -120,11 +121,21 @@ export class CategoryResolver {
 export class DishResolver {
   constructor(private readonly restaurantService: RestaurantService) {}
 
+  @Role(['Owner'])
   @Mutation(() => CreateDishOutput)
   createDish(
     @AuthUser() owner: User,
     @Args('input') createDishInput: CreateDishInput,
-  ) {
+  ): Promise<CreateDishOutput> {
     return this.restaurantService.createDish(owner, createDishInput);
+  }
+
+  @Role(['Owner'])
+  @Mutation(() => UpdateDishOutput)
+  updateDish(
+    @AuthUser() owner: User,
+    @Args('input') updateDishInput: UpdateDishInput,
+  ): Promise<UpdateDishOutput> {
+    return this.restaurantService.updateDish(owner, updateDishInput);
   }
 }
