@@ -29,6 +29,7 @@ import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
 import { Dish } from './entities/dish.entity';
 import { UpdateDishInput, UpdateDishOutput } from './dtos/update-dish.dto';
 import { DeleteDishInput, DeleteDishOutput } from './dtos/delete-dish.dto';
+import { CoreOutput } from '@src/common/dtos/output.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -332,23 +333,13 @@ export class RestaurantService {
     updateDishInput: UpdateDishInput,
   ): Promise<UpdateDishOutput> {
     try {
-      const dish = await this.dishRepository.findOne({
-        where: { id: updateDishInput.dishId },
-        relations: ['restaurant'],
-      });
+      const result = await this.checkDishAndOwner(
+        owner.id,
+        updateDishInput.dishId,
+      );
 
-      if (!dish) {
-        return {
-          ok: false,
-          error: 'Dish not found.',
-        };
-      }
-
-      if (owner.id !== dish.restaurant.ownerId) {
-        return {
-          ok: false,
-          error: "You can't update a dish because you don't own restaurant.",
-        };
+      if (!result.ok) {
+        return result;
       }
 
       await this.dishRepository.save([
@@ -371,23 +362,10 @@ export class RestaurantService {
     { dishId }: DeleteDishInput,
   ): Promise<DeleteDishOutput> {
     try {
-      const dish = await this.dishRepository.findOne({
-        where: { id: dishId },
-        relations: ['restaurant'],
-      });
+      const result = await this.checkDishAndOwner(owner.id, dishId);
 
-      if (!dish) {
-        return {
-          ok: false,
-          error: 'Dish not found.',
-        };
-      }
-
-      if (owner.id !== dish.restaurant.ownerId) {
-        return {
-          ok: false,
-          error: "You can't delete a dish because you don't own restaurant.",
-        };
+      if (!result.ok) {
+        return result;
       }
 
       await this.dishRepository.delete(dishId);
@@ -399,6 +377,30 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not delete Dish.',
+      };
+    }
+  }
+
+  private async checkDishAndOwner(
+    ownerId: number,
+    dishId: number,
+  ): Promise<CoreOutput> {
+    const dish = await this.dishRepository.findOne({
+      where: { id: dishId },
+      relations: ['restaurant'],
+    });
+
+    if (!dish) {
+      return {
+        ok: false,
+        error: 'Dish not found.',
+      };
+    }
+
+    if (ownerId !== dish.restaurant.ownerId) {
+      return {
+        ok: false,
+        error: "You can't do that because you don't own restaurant.",
       };
     }
   }
