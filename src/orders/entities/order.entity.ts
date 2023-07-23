@@ -41,8 +41,8 @@ export class Order extends CoreEntity {
   @ManyToOne(() => Restaurant, (restaurant) => restaurant.orders, {
     onDelete: 'SET NULL',
   })
-  @Field(() => Restaurant)
-  restaurant: Restaurant;
+  @Field(() => Restaurant, { nullable: true })
+  restaurant?: Restaurant;
 
   @ManyToMany(() => OrderItem)
   @Field(() => [OrderItem])
@@ -54,7 +54,7 @@ export class Order extends CoreEntity {
   @IsNumber()
   total?: number;
 
-  @Column({ type: 'enum', enum: OrderStatus })
+  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.Pending })
   @Field(() => OrderStatus)
   @IsEnum(OrderStatus)
   status: OrderStatus;
