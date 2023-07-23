@@ -9,7 +9,7 @@ import { CoreEntity } from '@src/common/entities/core.entity';
 import { Restaurant } from '@src/restaurants/entities/restaurant.entity';
 import { User } from '@src/users/entities/user.entity';
 import { IsEnum, IsNumber } from 'class-validator';
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 
 enum OrderStatus {
@@ -44,9 +44,10 @@ export class Order extends CoreEntity {
   @Field(() => Restaurant, { nullable: true })
   restaurant?: Restaurant;
 
-  @ManyToMany(() => OrderItem)
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
+    onDelete: 'SET NULL',
+  })
   @Field(() => [OrderItem])
-  @JoinTable()
   items: OrderItem[];
 
   @Column({ nullable: true })
