@@ -19,7 +19,7 @@ export class OrderItemOption {
 @InputType('OrderItemInputType', { isAbstract: true })
 export class OrderItem extends CoreEntity {
   @Field(() => Order)
-  @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, { onDelete: 'CASCADE' })
   order: Order;
 
   @Field(() => Dish)
