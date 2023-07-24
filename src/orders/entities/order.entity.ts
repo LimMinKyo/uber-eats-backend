@@ -12,7 +12,7 @@ import { IsEnum, IsNumber } from 'class-validator';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 
-enum OrderStatus {
+export enum OrderStatus {
   Pending = 'Pending',
   Cooking = 'Cooking',
   PickedUp = 'PickedUp',
