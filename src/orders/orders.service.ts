@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Order } from './entities/order.entity';
+import { Order, OrderStatus } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
 import { User, UserRole } from '@src/users/entities/user.entity';
@@ -9,6 +9,7 @@ import { Dish } from '@src/restaurants/entities/dish.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
+import { UpdateOrderInput, UpdateOrderOutput } from './dtos/update-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -156,21 +157,7 @@ export class OrderService {
         };
       }
 
-      let canSee = true;
-      if (user.role === UserRole.Client && user.id !== order.customerId) {
-        canSee = false;
-      }
-      if (user.role === UserRole.Delivery && user.id !== order.driverId) {
-        canSee = false;
-      }
-      if (
-        user.role === UserRole.Owner &&
-        user.id !== order.restaurant.ownerId
-      ) {
-        canSee = false;
-      }
-
-      if (!canSee) {
+      if (!this.canSeeOrder(user, order)) {
         return {
           ok: false,
           error: "You can't see order.",
@@ -187,5 +174,87 @@ export class OrderService {
         error: 'Could not get order.',
       };
     }
+  }
+
+  async updateOrder(
+    user: User,
+    { orderId, status }: UpdateOrderInput,
+  ): Promise<UpdateOrderOutput> {
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId },
+        relations: ['restaurant'],
+      });
+
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found.',
+        };
+      }
+
+      if (!this.canSeeOrder(user, order)) {
+        return {
+          ok: false,
+          error: "You can't see that.",
+        };
+      }
+
+      if (!this.canUpdateOrder(user, status)) {
+        return {
+          ok: false,
+          error: "You can't update order.",
+        };
+      }
+
+      await this.orderRepository.save([{ id: orderId, status }]);
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not update order.',
+      };
+    }
+  }
+
+  private canSeeOrder(user: User, order: Order) {
+    let isCanSee = true;
+    if (user.role === UserRole.Client && user.id !== order.customerId) {
+      isCanSee = false;
+    }
+    if (user.role === UserRole.Delivery && user.id !== order.driverId) {
+      isCanSee = false;
+    }
+    if (user.role === UserRole.Owner && user.id !== order.restaurant.ownerId) {
+      isCanSee = false;
+    }
+
+    return isCanSee;
+  }
+
+  private canUpdateOrder(user: User, status: OrderStatus) {
+    let isCanUpdate = true;
+
+    if (user.role === UserRole.Client) {
+      isCanUpdate = false;
+    }
+    if (
+      user.role === UserRole.Owner &&
+      status !== OrderStatus.Cooking &&
+      status !== OrderStatus.Cooked
+    ) {
+      isCanUpdate = false;
+    }
+    if (
+      user.role === UserRole.Delivery &&
+      status !== OrderStatus.PickedUp &&
+      status !== OrderStatus.Delivered
+    ) {
+      isCanUpdate = false;
+    }
+
+    return isCanUpdate;
   }
 }
