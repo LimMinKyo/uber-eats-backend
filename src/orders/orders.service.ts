@@ -11,7 +11,11 @@ import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { UpdateOrderInput, UpdateOrderOutput } from './dtos/update-order.dto';
 import { PubSub } from 'graphql-subscriptions';
-import { NEW_PENDING_ORDER, PUB_SUB } from '@src/common/common.constants';
+import {
+  NEW_COOKED_ORDER,
+  NEW_PENDING_ORDER,
+  PUB_SUB,
+} from '@src/common/common.constants';
 
 @Injectable()
 export class OrderService {
@@ -218,6 +222,13 @@ export class OrderService {
       }
 
       await this.orderRepository.save([{ id: orderId, status }]);
+
+      if (user.role === UserRole.Owner && status === OrderStatus.Cooked) {
+        await this.pubSub.publish(NEW_COOKED_ORDER, {
+          cookedOrder: { ...order, status },
+        });
+      }
+
       return {
         ok: true,
       };
