@@ -8,12 +8,13 @@ import {
 } from './dtos/create-payment.dto';
 import { User } from '@src/users/entities/user.entity';
 import { Restaurant } from '@src/restaurants/entities/restaurant.entity';
+import { GetPaymentsOutput } from './dtos/get-payments.dto';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @InjectRepository(Payment)
-    private readonly paymentRepository: Repository<Payment>,
+    private readonly paymentsRepository: Repository<Payment>,
     @InjectRepository(Restaurant)
     private readonly restaurantsRepository: Repository<Restaurant>,
   ) {}
@@ -41,8 +42,8 @@ export class PaymentsService {
         };
       }
 
-      await this.paymentRepository.save(
-        this.paymentRepository.create({
+      await this.paymentsRepository.save(
+        this.paymentsRepository.create({
           transactionId,
           restaurant,
           user: owner,
@@ -56,6 +57,24 @@ export class PaymentsService {
       return {
         ok: false,
         error: 'Could not create payment.',
+      };
+    }
+  }
+
+  async getPayments(owner: User): Promise<GetPaymentsOutput> {
+    try {
+      const payments = await this.paymentsRepository.find({
+        where: { userId: owner.id },
+      });
+
+      return {
+        ok: true,
+        payments,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not load payments.',
       };
     }
   }
