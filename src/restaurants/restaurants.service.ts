@@ -30,6 +30,7 @@ import { Dish } from './entities/dish.entity';
 import { UpdateDishInput, UpdateDishOutput } from './dtos/update-dish.dto';
 import { DeleteDishInput, DeleteDishOutput } from './dtos/delete-dish.dto';
 import { CoreOutput } from '@src/common/dtos/output.dto';
+import { MyRestaurantsOutput } from './dtos/my-restaurants.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -62,6 +63,23 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not create restaurant.',
+      };
+    }
+  }
+
+  async getMyRestaurants(owner: User): Promise<MyRestaurantsOutput> {
+    try {
+      const restaurants = await this.restaurantRepository.find({
+        where: { owner: { id: owner.id } },
+      });
+      return {
+        ok: true,
+        restaurants,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find restaurants.',
       };
     }
   }
