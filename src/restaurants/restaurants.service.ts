@@ -276,13 +276,14 @@ export class RestaurantService {
         skip: (page - 1) * 25,
       });
 
-      const totalResult = await this.getRestaurantCount(category);
+      const totalResults = await this.getRestaurantCount(category);
 
       return {
         ok: true,
         category,
         restaurants,
-        totalPages: Math.ceil(totalResult / 25),
+        totalPages: Math.ceil(totalResults / 25),
+        totalResults,
       };
     } catch (error) {
       return {
