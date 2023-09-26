@@ -10,8 +10,8 @@ export class OrderItemOption {
   @Field(() => String)
   name: string;
 
-  @Field(() => String)
-  choice: string;
+  @Field(() => String, { nullable: true })
+  choice?: string;
 }
 
 @Entity()

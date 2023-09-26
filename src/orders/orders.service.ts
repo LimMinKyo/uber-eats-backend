@@ -35,11 +35,11 @@ export class OrderService {
 
   async createOrder(
     customer: User,
-    { retaurantId, items }: CreateOrderInput,
+    { restaurantId, items }: CreateOrderInput,
   ): Promise<CreateOrderOutput> {
     try {
       const restaurant = await this.restaurantRepository.findOne({
-        where: { id: retaurantId },
+        where: { id: restaurantId },
       });
 
       if (!restaurant) {
@@ -73,7 +73,7 @@ export class OrderService {
           if (dishOption && dishOption.extra) {
             dishTotalPrice += dishOption.extra;
 
-            const choice = dishOption.choices.find(
+            const choice = dishOption.choices?.find(
               (choice) => choice.name === itemOption.choice,
             );
 
@@ -110,8 +110,10 @@ export class OrderService {
 
       return {
         ok: true,
+        orderId: order.id,
       };
-    } catch {
+    } catch (error) {
+      console.log(error);
       return {
         ok: false,
         error: 'Could not create order.',

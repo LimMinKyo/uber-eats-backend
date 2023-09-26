@@ -31,7 +31,7 @@ export class Order extends CoreEntity {
     nullable: true,
     eager: true,
   })
-  @Field(() => User)
+  @Field(() => User, { nullable: true })
   customer?: User;
 
   @RelationId((order: Order) => order.customer)
@@ -42,6 +42,7 @@ export class Order extends CoreEntity {
     nullable: true,
     eager: true,
   })
+  @Field(() => User, { nullable: true })
   driver?: User;
 
   @RelationId((order: Order) => order.driver)
