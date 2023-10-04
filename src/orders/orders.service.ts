@@ -230,7 +230,7 @@ export class OrderService {
       const newOrder = { ...order, status };
       if (user.role === UserRole.Owner && status === OrderStatus.Cooked) {
         await this.pubSub.publish(NEW_COOKED_ORDER, {
-          cookedOrder: newOrder,
+          cookedOrders: newOrder,
         });
       }
 
