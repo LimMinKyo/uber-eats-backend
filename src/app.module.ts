@@ -22,6 +22,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entities/payment.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UploadsModule } from './uploads/uploads.module';
+import { AppController } from './app.controller';
 
 const TOKEN_KEY = 'x-jwt';
 
@@ -31,7 +32,7 @@ const TOKEN_KEY = 'x-jwt';
       isGlobal: true,
       envFilePath:
         process.env.NODE_ENV === 'development'
-          ? '.env.dev'
+          ? '.env.development'
           : process.env.NODE_ENV === 'production'
           ? '.env'
           : '.env.test',
@@ -108,7 +109,7 @@ const TOKEN_KEY = 'x-jwt';
     PaymentsModule,
     UploadsModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}
