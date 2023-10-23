@@ -30,14 +30,16 @@ const TOKEN_KEY = 'x-jwt';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath:
-        process.env.NODE_ENV === 'dev'
+        process.env.NODE_ENV === 'development'
           ? '.env.dev'
-          : process.env.NODE_ENV === 'prod'
-          ? '.env.prod'
+          : process.env.NODE_ENV === 'production'
+          ? '.env'
           : '.env.test',
-      ignoreEnvFile: process.env.NODE_ENV === 'prod',
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('dev', 'prod', 'test').required(),
+        NODE_ENV: Joi.string()
+          .valid('development', 'production', 'test')
+          .required(),
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.string().required(),
         DB_USERNAME: Joi.string().required(),
