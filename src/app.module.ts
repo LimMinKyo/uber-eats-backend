@@ -41,15 +41,15 @@ const TOKEN_KEY = 'x-jwt';
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test')
           .required(),
+        FRONT_URL: Joi.string().required(),
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.string().required(),
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_NAME: Joi.string().required(),
         PRIVATE_KEY: Joi.string().required(),
-        MAILGUN_API_KEY: Joi.string().required(),
-        MAILGUN_DOMAIN: Joi.string().required(),
-        MAILGUN_FROM_EMAIL: Joi.string().required(),
+        MAIL_USER: Joi.string().required(),
+        MAIL_PASS: Joi.string().required(),
         AWS_ACCESS_KEY: Joi.string().required(),
         AWS_SECRET_ACCESS_KEY: Joi.string().required(),
         AWS_BUCKET_NAME: Joi.string().required(),
@@ -97,11 +97,7 @@ const TOKEN_KEY = 'x-jwt';
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }),
-    MailModule.forRoot({
-      apiKey: process.env.MAILGUN_API_KEY,
-      domain: process.env.MAILGUN_DOMAIN,
-      fromEmail: process.env.MAILGUN_FROM_EMAIL,
-    }),
+    MailModule,
     AuthModule,
     RestaurantsModule,
     UsersModule,

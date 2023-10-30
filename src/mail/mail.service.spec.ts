@@ -1,13 +1,12 @@
 import { Test } from '@nestjs/testing';
 import { MailService } from './mail.service';
-import { CONFIG_OPTIONS } from '@src/common/common.constants';
-import * as FormData from 'form-data';
-import got from 'got';
+import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 
-const TEST_DOMAIN = 'test-domain';
+const mockSendEmail = jest.fn();
+const getMockMailerService = () => ({ sendMail: mockSendEmail });
 
-jest.mock('got');
-jest.mock('form-data');
+const TEST_FRONT_URL = 'test-front-url';
 
 describe('MailService', () => {
   let mailService: MailService;
@@ -16,12 +15,17 @@ describe('MailService', () => {
     const module = await Test.createTestingModule({
       providers: [
         MailService,
+        { provide: MailerService, useValue: getMockMailerService() },
         {
-          provide: CONFIG_OPTIONS,
+          provide: ConfigService,
           useValue: {
-            apiKey: 'test-apiKey',
-            domain: TEST_DOMAIN,
-            fromEmail: 'test-fromEmail',
+            get: jest.fn((key: string) => {
+              if (key === 'FRONT_URL') {
+                return TEST_FRONT_URL;
+              }
+
+              return null;
+            }),
           },
         },
       ],
@@ -39,62 +43,28 @@ describe('MailService', () => {
         email: 'email',
         code: 'code',
       };
-      jest.spyOn(mailService, 'sendEmail').mockImplementation(async () => true);
+      const testConfirmLink = `${TEST_FRONT_URL}/confirm?code=${sendVerificationEmail.code}`;
+
       mailService.sendVerificationEmail(
         sendVerificationEmail.email,
         sendVerificationEmail.code,
       );
-      expect(mailService.sendEmail).toHaveBeenCalledTimes(1);
-      expect(mailService.sendEmail).toHaveBeenCalledWith({
-        subject: 'Verify Your Email',
-        template: 'verify-email',
+
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledWith({
         to: sendVerificationEmail.email,
-        emailVars: [
-          { key: 'username', value: sendVerificationEmail.email },
-          { key: 'code', value: sendVerificationEmail.code },
-        ],
+        from: 'noreplay@uber-clone.com',
+        subject: 'Please verify your email <Uber Eats>',
+        html: `
+          Welcome!
+          <br />
+          Thanks for signing up with Uber Eats!
+          <br />
+          You must follow this link to confirm your account:
+          <br />
+          <a href="${testConfirmLink}" target="_blank">${testConfirmLink}</a>
+        `,
       });
-    });
-  });
-
-  describe('sendEmail', () => {
-    it('sends email', async () => {
-      const spyFormDataAppend = jest.spyOn(FormData.prototype, 'append');
-
-      const result = await mailService.sendEmail({
-        subject: 'Verify Your Email',
-        template: 'verify-email',
-        to: 'email',
-        emailVars: [
-          { key: 'username', value: 'email' },
-          { key: 'code', value: 'code' },
-        ],
-      });
-
-      expect(spyFormDataAppend).toHaveBeenCalledTimes(6);
-      expect(got.post).toHaveBeenCalledTimes(1);
-      expect(got.post).toHaveBeenCalledWith(
-        `https://api.mailgun.net/v3/${TEST_DOMAIN}/messages`,
-        expect.any(Object),
-      );
-
-      expect(result).toEqual(true);
-    });
-
-    it('fails on error', async () => {
-      jest.spyOn(got, 'post').mockRejectedValue(new Error());
-
-      const result = await mailService.sendEmail({
-        subject: 'Verify Your Email',
-        template: 'verify-email',
-        to: 'email',
-        emailVars: [
-          { key: 'username', value: 'email' },
-          { key: 'code', value: 'code' },
-        ],
-      });
-
-      expect(result).toEqual(false);
     });
   });
 });
